@@ -21,23 +21,21 @@
                     {{ __('Dashboard') }}
                 </flux:navlist.item>
 
-                @if (auth()->user()->role === App\Enums\UserRole::Admin)
+                <!-- @if (auth()->user()->role === App\Enums\UserRole::Admin)
                     <flux:navlist.item icon="list-bullet" :href="route('dashboard')" wire:navigate>{{ __('Product') }}
                     </flux:navlist.item>
 
-                @endif
+                @endif -->
 
-                @if (auth()->user()->role === App\Enums\UserRole::User)
-                    <flux:navlist.item icon="building-library" :href="route('transaksi')" wire:navigate>
-                        {{ __('Manajemen Transaksi') }}
-                    </flux:navlist.item>
+                <flux:navlist.item icon="building-library" :href="route('transaksi')" wire:navigate>
+                    {{ __('Manajemen Transaksi') }}
+                </flux:navlist.item>
 
-                    <flux:navlist.item icon="flag" :href="route('laporan')" wire:navigate>{{ __('Laporan Keuangan') }}
-                    </flux:navlist.item>
+                <flux:navlist.item icon="flag" :href="route('laporan')" wire:navigate>{{ __('Laporan Keuangan') }}
+                </flux:navlist.item>
 
-                    <flux:navlist.item icon="flag" :href="route('konversi')" wire:navigate>{{ __('Konversi Mata Uang') }}
-                    </flux:navlist.item>
-                @endif
+                <flux:navlist.item icon="flag" :href="route('konversi')" wire:navigate>{{ __('Konversi Mata Uang') }}
+                </flux:navlist.item>
             </flux:navlist.group>
         </flux:navlist>
 

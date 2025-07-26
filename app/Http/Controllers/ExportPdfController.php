@@ -13,21 +13,27 @@ class ExportPdfController extends Controller
     {
         $userId = auth()->id();
 
-        $query = Transaksi::whereYear('tanggal', $tahun)->where('user_id', $userId);
+        // $query = Transaksi::whereYear('tanggal', $tahun)->where('user_id', $userId);
+        $query = Transaksi::whereRaw("strftime('%Y', tanggal) = ?", [$tahun])
+            ->where('user_id', $userId);
 
         if ($bulan) {
-            $query->whereMonth('tanggal', $bulan);
+            // $query->whereMonth('tanggal', $bulan);
+            $query->whereRaw("strftime('%m', tanggal) = ?", [str_pad($bulan, 2, '0', STR_PAD_LEFT)]);
         }
 
-        $dataBulanan = $query->selectRaw("MONTH(tanggal) as bulan, jenis, SUM(jumlah) as total")
+        // $dataBulanan = $query->selectRaw("MONTH(tanggal) as bulan, jenis, SUM(jumlah) as total")
+        $dataBulanan = $query->selectRaw("strftime('%m', tanggal) as bulan, jenis, SUM(jumlah) as total")
             ->groupBy('bulan', 'jenis')
             ->get();
 
         $topKategori = Transaksi::select('category_id', DB::raw('SUM(jumlah) as total'))
             ->where('user_id', $userId)
             ->where('jenis', 'Pengeluaran')
-            ->whereYear('tanggal', $tahun)
-            ->when($bulan, fn($q) => $q->whereMonth('tanggal', $bulan))
+            // ->whereYear('tanggal', $tahun)
+            ->whereRaw("strftime('%Y', tanggal) = ?", [$tahun])
+            // ->when($bulan, fn($q) => $q->whereMonth('tanggal', $bulan))
+            ->when($bulan, fn($q) => $q->whereRaw("strftime('%m', tanggal) = ?", [str_pad($bulan, 2, '0', STR_PAD_LEFT)]))
             ->groupBy('category_id')
             ->orderByDesc('total')
             ->take(5)

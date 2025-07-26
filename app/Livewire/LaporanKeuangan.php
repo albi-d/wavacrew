@@ -42,16 +42,25 @@ class LaporanKeuangan extends Component
             $query->whereMonth('tanggal', $this->bulan);
         }
 
+        // $query = Transaksi::whereRaw("strftime('%Y', tanggal) = ?", [$this->tahun])
+        //     ->where('user_id', $userId);
+
+        // if ($this->bulan) {
+        //     $query->whereRaw("strftime('%m', tanggal) = ?", [str_pad($this->bulan, 2, '0', STR_PAD_LEFT)]);
+        // }
+
+
         // Total pemasukan dan pengeluaran per bulan
         $this->dataBulanan = $query->clone()
-            ->selectRaw("MONTH(tanggal) as bulan, jenis, SUM(jumlah) as total")
+            ->selectRaw("MONTH(tanggal) as bulan, jenis, SUM(jumlah) as total") // Untuk MySQL
+            // ->selectRaw("strftime('%m', tanggal) as bulan, jenis, SUM(jumlah) as total") // Untuk SQLite
             ->groupBy('bulan', 'jenis')
             ->get()
             ->groupBy('bulan')
             ->map(function ($group) {
                 return $group->map(function ($item) {
                     return [
-                        'bulan' => $item->bulan,
+                        'bulan' => ltrim($item->bulan, '0'), // Hilangkan nol di depan misalnya '01' jadi '1'
                         'jenis' => $item->jenis,
                         'total' => $item->total,
                     ];
@@ -62,10 +71,12 @@ class LaporanKeuangan extends Component
         // Kategori pengeluaran terbanyak
         $topQuery = Transaksi::where('user_id', $userId)
             ->where('jenis', 'Pengeluaran')
-            ->whereYear('tanggal', $this->tahun);
+            ->whereYear('tanggal', $this->tahun); // Untuk MySQL
+            // ->whereRaw("strftime('%Y', tanggal) = ?", [$this->tahun]); // Untuk SQLite
 
         if ($this->bulan) {
-            $topQuery->whereMonth('tanggal', $this->bulan);
+            $topQuery->whereMonth('tanggal', $this->bulan); // Untuk MySQL
+            // $topQuery->whereRaw("strftime('%m', tanggal) = ?", [str_pad($this->bulan, 2, '0', STR_PAD_LEFT)]); // Untuk SQLite
         }
 
         $this->topKategori = $topQuery
@@ -73,16 +84,17 @@ class LaporanKeuangan extends Component
             ->groupBy('category_id')
             ->orderByDesc('total')
             ->take(5)
+            ->with('category') // tambahkan eager load
             ->get()
             ->map(function ($item) {
-                $kategori = Category::find($item->category_id);
                 return [
                     'category_id' => $item->category_id,
                     'total' => $item->total,
-                    'category_name' => $kategori ? $kategori->name : 'Tanpa Kategori',
+                    'category_name' => $item->category->name ?? 'Tanpa Kategori',
                 ];
             })
             ->toArray();
+
 
         $this->dispatch('refreshChart', $this->dataBulanan);
         $this->dispatch('dataDiperbarui');
@@ -92,4 +104,4 @@ class LaporanKeuangan extends Component
     {
         return view('livewire.laporan-keuangan');
     }
-} 
+}

@@ -5,7 +5,6 @@ namespace App\Livewire;
 use Livewire\Component;
 use App\Models\Transaksi;
 use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class DashboardRingkasan extends Component
@@ -20,7 +19,6 @@ class DashboardRingkasan extends Component
         $this->dispatch('$refresh');
     }
 
-
     public function mount()
     {
         $this->bulan = now()->month;
@@ -32,12 +30,26 @@ class DashboardRingkasan extends Component
         return redirect()->route('transaksi-filter', ['filter' => $tipe]);
     }
 
-
     public function render()
     {
         $userId = Auth::id();
+        $bulan = sprintf('%02d', $this->bulan);
+        $tahun = strval($this->tahun);
 
-        // Total terfilter (sesuai bulan & tahun)
+        // Total terfilter (sesuai bulan & tahun) - SQLite
+        // $totalPemasukan = Transaksi::where('user_id', $userId)
+        //     ->where('jenis', 'Pemasukan')
+        //     ->whereRaw("strftime('%m', tanggal) = ?", [$bulan])
+        //     ->whereRaw("strftime('%Y', tanggal) = ?", [$tahun])
+        //     ->sum('jumlah');
+
+        // $totalPengeluaran = Transaksi::where('user_id', $userId)
+        //     ->where('jenis', 'Pengeluaran')
+        //     ->whereRaw("strftime('%m', tanggal) = ?", [$bulan])
+        //     ->whereRaw("strftime('%Y', tanggal) = ?", [$tahun])
+        //     ->sum('jumlah');
+
+        // Versi lama (MySQL)
         $totalPemasukan = Transaksi::where('user_id', $userId)
             ->where('jenis', 'Pemasukan')
             ->whereMonth('tanggal', $this->bulan)
@@ -63,7 +75,20 @@ class DashboardRingkasan extends Component
 
         $saldoAll = $totalPemasukanAll - $totalPengeluaranAll;
 
-        // Chart data tetap berdasarkan filter
+        // Chart data - SQLite
+        // $chartData = Transaksi::select(
+        //     DB::raw("strftime('%d', tanggal) as tanggal"),
+        //     DB::raw("SUM(CASE WHEN jenis = 'Pemasukan' THEN jumlah ELSE 0 END) as Pemasukan"),
+        //     DB::raw("SUM(CASE WHEN jenis = 'Pengeluaran' THEN jumlah ELSE 0 END) as Pengeluaran")
+        // )
+        //     ->where('user_id', $userId)
+        //     ->whereRaw("strftime('%m', tanggal) = ?", [$bulan])
+        //     ->whereRaw("strftime('%Y', tanggal) = ?", [$tahun])
+        //     ->groupBy(DB::raw("strftime('%d', tanggal)"))
+        //     ->orderBy('tanggal')
+        //     ->get();
+
+        // Versi lama (MySQL)
         $chartData = Transaksi::select(
             DB::raw('DAY(tanggal) as tanggal'),
             DB::raw("SUM(CASE WHEN jenis = 'Pemasukan' THEN jumlah ELSE 0 END) as Pemasukan"),

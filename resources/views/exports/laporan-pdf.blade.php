@@ -105,7 +105,7 @@
         <tbody>
             @foreach ($dataBulanan as $item)
                 <tr>
-                    <td>{{ \Carbon\Carbon::create()->month($item->bulan)->translatedFormat('F') }}</td>
+                    <td>{{ \Carbon\Carbon::create()->month((int) $item->bulan)->translatedFormat('F') }}</td>
                     <td>{{ ucfirst($item->jenis) }}</td>
                     <td class="currency">Rp{{ number_format($item->total, 0, ',', '.') }}</td>
                 </tr>
